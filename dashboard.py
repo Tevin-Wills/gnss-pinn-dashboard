@@ -331,7 +331,7 @@ with tab2:
         fig_3d.add_trace(go.Surface(x=log_s, y=lam_v, z=Zp,
             colorscale=[[0,"#0A3E20"],[0.3,PINN_BLUE],[0.6,AMBER],[1,CORAL]],
             name="PINN", opacity=0.85,
-            colorbar=dict(title="Error(m)", tickfont=dict(color=TEXT_COLOR), titlefont=dict(color=TEXT_COLOR)),
+            colorbar=dict(title=dict(text="Error(m)", font=dict(color=TEXT_COLOR)), tickfont=dict(color=TEXT_COLOR)),
             contours=dict(z=dict(show=True, usecolormap=True, project_z=True)),
             hovertemplate="Samples: 10^%{x:.1f}<br>λ: %{y:.2f}<br>Error: %{z:.1f}m<extra>PINN</extra>"))
         fig_3d.add_trace(go.Surface(x=log_s, y=lam_v, z=Zn,
@@ -544,7 +544,7 @@ with tab4:
     fig_3de = go.Figure()
     fig_3de.add_trace(go.Surface(x=sh_r, y=dr_r, z=ERR,
         colorscale=[[0,"#0A3E20"],[0.3,PINN_BLUE],[0.6,AMBER],[1,CORAL]],
-        colorbar=dict(title="Error(m)", tickfont=dict(color=TEXT_COLOR), titlefont=dict(color=TEXT_COLOR)),
+        colorbar=dict(title=dict(text="Error(m)", font=dict(color=TEXT_COLOR)), tickfont=dict(color=TEXT_COLOR)),
         contours=dict(z=dict(show=True, usecolormap=True, project_z=True)),
         hovertemplate="Shift:%{x:.1f}<br>Drift:%{y:.1f}ns<br>Error:%{z:.1f}m<extra></extra>"))
     fig_3de.add_trace(go.Scatter3d(x=[cur_sh], y=[cur_dr], z=[cur_e], mode="markers",
@@ -695,7 +695,7 @@ with tab6:
         fig_l3 = go.Figure()
         fig_l3.add_trace(go.Surface(x=s3, y=b3, z=LAT,
             colorscale=[[0,"#0A3E20"],[0.3,PINN_BLUE],[0.7,AMBER],[1,CORAL]],
-            colorbar=dict(title="ms", tickfont=dict(color=TEXT_COLOR), titlefont=dict(color=TEXT_COLOR)),
+            colorbar=dict(title=dict(text="ms", font=dict(color=TEXT_COLOR)), tickfont=dict(color=TEXT_COLOR)),
             contours=dict(z=dict(show=True, usecolormap=True, project_z=True)),
             hovertemplate="Size:%{x}M<br>Batch:%{y}<br>%{z:.1f}ms<extra></extra>"))
         fig_l3.add_trace(go.Surface(x=s3, y=b3, z=np.full_like(LAT, 100),
