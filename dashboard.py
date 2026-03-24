@@ -14,6 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+import base64, pathlib
 
 # ─────────────────────────────────────────────
 # Page config
@@ -102,7 +103,22 @@ def render_3d_auto(fig, height=500, speed=0.35):
 
 
 # ─────────────────────────────────────────────
-# Custom CSS
+# Logo helpers — embedded base64 for portability
+# ─────────────────────────────────────────────
+@st.cache_data
+def _load_logo_b64(name, ext):
+    """Try loading logo from same dir as script, fall back gracefully."""
+    p = pathlib.Path(__file__).parent / name
+    if p.exists():
+        mime = "png" if ext == "png" else "jpeg"
+        return f"data:image/{mime};base64," + base64.b64encode(p.read_bytes()).decode()
+    return ""
+
+BEIHANG_LOGO = _load_logo_b64("university logo.png", "png")
+RCSSTEAP_LOGO = _load_logo_b64("RCSSTEAP.jpg", "jpg")
+
+# ─────────────────────────────────────────────
+# Custom CSS  (includes hover interactivity)
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -111,32 +127,88 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         background-color: #142A3E; color: #E0E7EE; border-radius: 6px 6px 0 0;
         padding: 8px 16px; border: 1px solid #1E3A5F;
+        transition: all 0.3s ease;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #1A3A5A; border-color: #00BCD4;
+        transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,188,212,0.25);
     }
     .stTabs [aria-selected="true"] { background-color: #0A2E50; border-bottom: 2px solid #00BCD4; }
     h1, h2, h3, .stMarkdown p, .stMarkdown li { color: #E0E7EE; }
     .stMetric label { color: #A0AEBB !important; }
     .stMetric [data-testid="stMetricValue"] { color: #E0E7EE !important; }
-    div[data-testid="stExpander"] { background-color: #142A3E; border: 1px solid #1E3A5F; border-radius: 8px; }
-    .info-card { background: linear-gradient(135deg, #142A3E, #1A354C); border: 1px solid #1E3A5F;
-        border-radius: 10px; padding: 16px 20px; margin: 8px 0; border-left: 4px solid #00BCD4; }
-    .warn-card { background: linear-gradient(135deg, #2A1A0A, #3E250A); border: 1px solid #5C3A0A;
-        border-radius: 10px; padding: 16px 20px; margin: 8px 0; border-left: 4px solid #FFB74D; }
-    .danger-card { background: linear-gradient(135deg, #2A0A0A, #3E1515); border: 1px solid #5C1A1A;
-        border-radius: 10px; padding: 16px 20px; margin: 8px 0; border-left: 4px solid #FF6B6B; }
-    .success-card { background: linear-gradient(135deg, #0A2A15, #0A3E20); border: 1px solid #0A5C2A;
-        border-radius: 10px; padding: 16px 20px; margin: 8px 0; border-left: 4px solid #66BB6A; }
+    div[data-testid="stExpander"] { background-color: #142A3E; border: 1px solid #1E3A5F; border-radius: 8px;
+        transition: all 0.3s ease; }
+    div[data-testid="stExpander"]:hover { border-color: #00BCD4; box-shadow: 0 4px 15px rgba(0,188,212,0.15); }
+
+    /* Card base + hover effects */
+    .info-card, .warn-card, .danger-card, .success-card {
+        border-radius: 10px; padding: 16px 20px; margin: 8px 0;
+        transition: all 0.35s ease; cursor: default;
+    }
+    .info-card { background: linear-gradient(135deg, #142A3E, #1A354C); border: 1px solid #1E3A5F; border-left: 4px solid #00BCD4; }
+    .info-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,188,212,0.25); border-color: #00BCD4; }
+    .warn-card { background: linear-gradient(135deg, #2A1A0A, #3E250A); border: 1px solid #5C3A0A; border-left: 4px solid #FFB74D; }
+    .warn-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(255,183,77,0.25); border-color: #FFB74D; }
+    .danger-card { background: linear-gradient(135deg, #2A0A0A, #3E1515); border: 1px solid #5C1A1A; border-left: 4px solid #FF6B6B; }
+    .danger-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(255,107,107,0.25); border-color: #FF6B6B; }
+    .success-card { background: linear-gradient(135deg, #0A2A15, #0A3E20); border: 1px solid #0A5C2A; border-left: 4px solid #66BB6A; }
+    .success-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(102,187,106,0.25); border-color: #66BB6A; }
+
+    /* Metric hover */
+    div[data-testid="stMetricValue"] { transition: all 0.3s ease; }
+    div[data-testid="stMetric-container"]:hover div[data-testid="stMetricValue"] {
+        transform: scale(1.08); text-shadow: 0 0 12px rgba(0,188,212,0.4);
+    }
+    div[data-testid="stMetric-container"] { transition: all 0.3s ease; border-radius: 8px; padding: 4px; }
+    div[data-testid="stMetric-container"]:hover { background-color: rgba(20,42,62,0.6); }
+
+    /* Plotly chart container hover */
+    div[data-testid="stPlotlyChart"] { transition: all 0.3s ease; border-radius: 8px; }
+    div[data-testid="stPlotlyChart"]:hover { box-shadow: 0 4px 20px rgba(0,188,212,0.15); }
+
+    /* DataFrame hover */
+    div[data-testid="stDataFrame"] { transition: all 0.3s ease; }
+    div[data-testid="stDataFrame"]:hover { box-shadow: 0 4px 16px rgba(0,188,212,0.15); }
+
+    /* Landing page styles */
+    .landing-container {
+        background: linear-gradient(180deg, #0D1B2A 0%, #142A3E 50%, #0D1B2A 100%);
+        border: 1px solid #1E3A5F; border-radius: 16px; padding: 35px 40px; margin: 10px 0 25px 0;
+        text-align: center;
+    }
+    .landing-logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .landing-logos img { height: 72px; transition: transform 0.3s ease; }
+    .landing-logos img:hover { transform: scale(1.08); }
+    .landing-divider { height: 2px; background: linear-gradient(90deg, transparent, #00BCD4, transparent);
+        margin: 18px 0; border: none; }
+    .landing-title { color: #E0E7EE; font-size: 24px; font-weight: 700; margin: 8px 0 4px 0; }
+    .landing-subtitle { color: #00BCD4; font-size: 16px; font-weight: 600; margin: 4px 0; }
+    .landing-info { color: #A0AEBB; font-size: 13px; margin: 2px 0; }
+    .landing-topic { color: #FFB74D; font-size: 14px; font-weight: 600; margin: 10px 0; }
+    .member-table { width: 100%; border-collapse: collapse; margin: 12px auto; max-width: 520px; }
+    .member-table th { background-color: #0A2E50; color: #00BCD4; padding: 8px 14px; font-size: 13px;
+        border: 1px solid #1E3A5F; }
+    .member-table td { color: #E0E7EE; padding: 7px 14px; font-size: 13px; border: 1px solid #1E3A5F;
+        background-color: #142A3E; transition: all 0.3s ease; }
+    .member-table tr:hover td { background-color: #1A3A5A; }
+    .brief-card { background: linear-gradient(135deg, #0A2E50, #142A3E); border: 1px solid #00BCD4;
+        border-radius: 10px; padding: 14px 20px; margin: 15px auto 5px auto; max-width: 700px;
+        text-align: left; transition: all 0.3s ease; }
+    .brief-card:hover { box-shadow: 0 6px 20px rgba(0,188,212,0.2); transform: translateY(-2px); }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Data & Compute Trade-offs: Traditional NNs vs PINNs")
-st.markdown(
-    "*Physics-Informed GNSS Positioning Error Correction in Degraded Environments* "
-    "— Assignment 2: The Data & Compute Reality Check"
-)
+# ─────────────────────────────────────────────
+# Sidebar — Beihang logo + controls
+# ─────────────────────────────────────────────
+if BEIHANG_LOGO:
+    st.sidebar.markdown(
+        f'<div style="text-align:center;padding:8px 0 12px 0;">'
+        f'<img src="{BEIHANG_LOGO}" style="height:55px;"/></div>',
+        unsafe_allow_html=True)
+    st.sidebar.divider()
 
-# ─────────────────────────────────────────────
-# Sidebar
-# ─────────────────────────────────────────────
 st.sidebar.header("Model & Environment Controls")
 model_size = st.sidebar.slider("Model parameters (millions)", 5, 200, 50, 5,
     help="Reference: 50M ~ 600 MB training state.")
@@ -161,6 +233,48 @@ ENV_CONFIG = {
 env = ENV_CONFIG[environment]
 
 # ═════════════════════════════════════════════
+# Landing Page
+# ═════════════════════════════════════════════
+_logo_left = f'<img src="{BEIHANG_LOGO}" alt="Beihang University"/>' if BEIHANG_LOGO else ""
+_logo_right = f'<img src="{RCSSTEAP_LOGO}" alt="RCSSTEAP"/>' if RCSSTEAP_LOGO else ""
+
+st.markdown(f"""
+<div class="landing-container">
+    <div class="landing-logos">
+        {_logo_left}
+        <div style="flex:1;"></div>
+        {_logo_right}
+    </div>
+    <p class="landing-info" style="font-size:14px;color:#E0E7EE;margin:0;">Beihang University (BUAA)</p>
+    <p class="landing-info">Regional Centre for Space Science and Technology Education<br>
+    in Asia and the Pacific (China) — RCSSTEAP</p>
+    <div class="landing-divider"></div>
+    <p class="landing-info">Course: <b style="color:#E0E7EE;">Artificial Intelligence and Advanced Large Models</b> &nbsp;|&nbsp; Spring 2025</p>
+    <p class="landing-title">Assignment 2 — The Data & Compute Reality Check</p>
+    <p class="landing-subtitle">Physics-Informed GNSS Positioning Error Correction in Degraded Environments</p>
+    <p class="landing-info" style="margin-top:6px;">Group 14</p>
+    <table class="member-table">
+        <tr><th>Name</th><th>Admission Number</th></tr>
+        <tr><td>Granny Tlou Molokomme</td><td>LS2525256</td></tr>
+        <tr><td>Letsoalo Maile</td><td>LS2525231</td></tr>
+        <tr><td>Lemalasia Tevin Muchera</td><td>LS2525229</td></tr>
+    </table>
+    <div class="brief-card">
+        <p style="color:#00BCD4;font-weight:600;margin:0 0 6px 0;">About This Dashboard</p>
+        <p style="color:#E0E7EE;font-size:13px;margin:0;line-height:1.6;">
+        Global Navigation Satellite Systems (GNSS) suffer severe accuracy degradation in urban canyons,
+        tunnels, and dense environments — exactly where precise positioning matters most. This interactive
+        dashboard explores the <b style="color:#29B6F6;">data and compute trade-offs</b> between traditional
+        neural networks and <b style="color:#29B6F6;">Physics-Informed Neural Networks (PINNs)</b> for
+        real-time error correction. We examine training costs, inference latency, quantization strategies,
+        distribution drift, and edge deployment — providing an engineering-grounded comparison to guide
+        architecture selection for safety-critical GNSS applications.</p>
+    </div>
+    <div class="landing-divider"></div>
+    <p class="landing-info" style="font-size:11px;color:#6B7B8D;">Use the sidebar controls to adjust model parameters and explore the interactive tabs below.</p>
+</div>
+""", unsafe_allow_html=True)
+
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📡 GNSS Degradation", "🏗️ Architecture", "📊 Data Reality", "⚠️ Silent Killers",
     "💰 Compute Economics", "🚀 Edge Deployment", "⚔️ Head-to-Head", "✅ Verdict",
