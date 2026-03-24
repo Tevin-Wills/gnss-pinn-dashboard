@@ -196,6 +196,81 @@ st.markdown("""
         border-radius: 10px; padding: 14px 20px; margin: 15px auto 5px auto; max-width: 700px;
         text-align: left; transition: all 0.3s ease; }
     .brief-card:hover { box-shadow: 0 6px 20px rgba(0,188,212,0.2); transform: translateY(-2px); }
+
+    /* ── Breathing / pulsing keyframes ── */
+    @keyframes breathe {
+        0%, 100% { opacity: 0.7; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.03); }
+    }
+    @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 4px rgba(0,188,212,0.15); }
+        50% { box-shadow: 0 0 14px rgba(0,188,212,0.4); }
+    }
+    @keyframes textShimmer {
+        0%, 100% { opacity: 0.85; }
+        50% { opacity: 1; text-shadow: 0 0 8px rgba(0,188,212,0.5); }
+    }
+    @keyframes borderBreath {
+        0%, 100% { border-color: #1E3A5F; }
+        50% { border-color: #00BCD4; }
+    }
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    /* ── Guide text (landing page bottom) ── */
+    .guide-text {
+        font-size: 13px; font-weight: 600; margin: 4px 0 0 0; padding: 10px 20px;
+        background: linear-gradient(90deg, #0A2E50, #142A3E, #0A2E50);
+        background-size: 200% 100%; animation: gradientShift 4s ease infinite;
+        border: 1px solid #00BCD4; border-radius: 8px; display: inline-block;
+        color: #00BCD4; letter-spacing: 0.3px;
+    }
+    .guide-text span { color: #FFB74D; }
+
+    /* ── Sidebar dark theme ── */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0D1B2A 0%, #101E30 100%) !important;
+    }
+    section[data-testid="stSidebar"] * { color: #E0E7EE; }
+    section[data-testid="stSidebar"] .stSlider label,
+    section[data-testid="stSidebar"] .stSelectbox label { color: #A0AEBB !important; }
+    section[data-testid="stSidebar"] hr { border-color: #1E3A5F !important; }
+
+    /* Sidebar logo breathing */
+    .sidebar-logo { animation: breathe 3.5s ease-in-out infinite; }
+
+    /* Sidebar controls — breathing border on hover */
+    section[data-testid="stSidebar"] div[data-testid="stSlider"],
+    section[data-testid="stSidebar"] div[data-baseweb="select"] {
+        border-radius: 6px; padding: 2px; transition: all 0.3s ease;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stSlider"]:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="select"]:hover {
+        background-color: rgba(0,188,212,0.06);
+    }
+
+    /* Sidebar header pulse */
+    section[data-testid="stSidebar"] h2 {
+        animation: textShimmer 3s ease-in-out infinite;
+    }
+
+    /* ── Tab titles breathing / twinkling ── */
+    .stTabs [data-baseweb="tab"] {
+        animation: glowPulse 3s ease-in-out infinite;
+    }
+    .stTabs [data-baseweb="tab"]:nth-child(2) { animation-delay: 0.4s; }
+    .stTabs [data-baseweb="tab"]:nth-child(3) { animation-delay: 0.8s; }
+    .stTabs [data-baseweb="tab"]:nth-child(4) { animation-delay: 1.2s; }
+    .stTabs [data-baseweb="tab"]:nth-child(5) { animation-delay: 1.6s; }
+    .stTabs [data-baseweb="tab"]:nth-child(6) { animation-delay: 2.0s; }
+    .stTabs [data-baseweb="tab"]:nth-child(7) { animation-delay: 2.4s; }
+    .stTabs [data-baseweb="tab"]:nth-child(8) { animation-delay: 2.8s; }
+    .stTabs [aria-selected="true"] {
+        animation: borderBreath 2.5s ease-in-out infinite !important;
+        box-shadow: 0 0 10px rgba(0,188,212,0.3);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -204,8 +279,9 @@ st.markdown("""
 # ─────────────────────────────────────────────
 if BEIHANG_LOGO:
     st.sidebar.markdown(
-        f'<div style="text-align:center;padding:8px 0 12px 0;">'
-        f'<img src="{BEIHANG_LOGO}" style="height:55px;"/></div>',
+        f'<div style="text-align:center;padding:10px 0 8px 0;">'
+        f'<img class="sidebar-logo" src="{BEIHANG_LOGO}" style="height:55px;"/>'
+        f'<p style="color:#00BCD4;font-size:10px;margin:6px 0 0 0;letter-spacing:0.5px;">GNSS-PINN Dashboard</p></div>',
         unsafe_allow_html=True)
     st.sidebar.divider()
 
@@ -271,7 +347,7 @@ st.markdown(f"""
         architecture selection for safety-critical GNSS applications.</p>
     </div>
     <div class="landing-divider"></div>
-    <p class="landing-info" style="font-size:11px;color:#6B7B8D;">Use the sidebar controls to adjust model parameters and explore the interactive tabs below.</p>
+    <p class="guide-text">Use the <span>sidebar controls</span> to adjust model parameters and explore the <span>interactive tabs</span> below.</p>
 </div>
 """, unsafe_allow_html=True)
 
