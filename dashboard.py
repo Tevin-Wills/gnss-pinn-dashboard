@@ -230,7 +230,9 @@ with tab1:
         fig_g = make_subplots(rows=1, cols=3,
             specs=[[{"type":"indicator"},{"type":"indicator"},{"type":"indicator"}]])
         fig_g.add_trace(go.Indicator(
-            mode="gauge+number", value=env["sats"],
+            mode="gauge+number+delta", value=env["sats"],
+            delta={"reference": 6, "increasing": {"color": GREEN}, "decreasing": {"color": CORAL},
+                   "prefix": "", "suffix": " vs 6"},
             title={"text":"Satellites","font":{"size":13,"color":TEXT_COLOR}},
             number={"font":{"color":TEXT_COLOR}},
             gauge={"axis":{"range":[0,12],"tickcolor":MUTED},"bar":{"color":PINN_BLUE},"bgcolor":CARD_BG,
@@ -239,7 +241,9 @@ with tab1:
                    "threshold":{"line":{"color":GREEN,"width":3},"value":4,"thickness":0.8}}
         ), row=1, col=1)
         fig_g.add_trace(go.Indicator(
-            mode="gauge+number", value=env["cn0"],
+            mode="gauge+number+delta", value=env["cn0"],
+            delta={"reference": 35, "increasing": {"color": GREEN}, "decreasing": {"color": CORAL},
+                   "prefix": "", "suffix": " dB"},
             title={"text":"C/N₀ (dB-Hz)","font":{"size":13,"color":TEXT_COLOR}},
             number={"font":{"color":TEXT_COLOR}},
             gauge={"axis":{"range":[0,50],"tickcolor":MUTED},"bar":{"color":CYAN},"bgcolor":CARD_BG,
@@ -248,7 +252,9 @@ with tab1:
                    "threshold":{"line":{"color":GREEN,"width":3},"value":35,"thickness":0.8}}
         ), row=1, col=2)
         fig_g.add_trace(go.Indicator(
-            mode="gauge+number", value=env["error_base"],
+            mode="gauge+number+delta", value=env["error_base"],
+            delta={"reference": 5, "increasing": {"color": CORAL}, "decreasing": {"color": GREEN},
+                   "prefix": "", "suffix": " vs 5m"},
             title={"text":"Error (m)","font":{"size":13,"color":TEXT_COLOR}},
             number={"font":{"color":TEXT_COLOR}},
             gauge={"axis":{"range":[0,100],"tickcolor":MUTED},"bar":{"color":CORAL},"bgcolor":CARD_BG,
@@ -276,11 +282,14 @@ with tab1:
         fig_deg.add_trace(go.Bar(x=envs_all, y=errors_all,
             marker_color=[GREEN, AMBER, CORAL, "#E53935"],
             text=[f"{e}m" for e in errors_all], textposition="outside",
-            textfont=dict(color=TEXT_COLOR, size=10), showlegend=False), row=1, col=1)
+            textfont=dict(color=TEXT_COLOR, size=10), showlegend=False,
+            hovertemplate="<b>%{x}</b><br>Position Error: %{y}m<extra></extra>"), row=1, col=1)
         fig_deg.add_hline(y=5, line_dash="dash", line_color=GREEN, row=1, col=1,
                           annotation_text="5m target", annotation_font_color=GREEN)
-        fig_deg.add_trace(go.Bar(x=envs_all, y=sats_all, name="Satellites", marker_color=PINN_BLUE), row=1, col=2)
-        fig_deg.add_trace(go.Bar(x=envs_all, y=cn0_all, name="C/N₀", marker_color=CYAN), row=1, col=2)
+        fig_deg.add_trace(go.Bar(x=envs_all, y=sats_all, name="Satellites", marker_color=PINN_BLUE,
+            hovertemplate="<b>%{x}</b><br>Visible SVs: %{y}<extra>Satellites</extra>"), row=1, col=2)
+        fig_deg.add_trace(go.Bar(x=envs_all, y=cn0_all, name="C/N₀", marker_color=CYAN,
+            hovertemplate="<b>%{x}</b><br>C/N₀: %{y} dB-Hz<extra>Signal</extra>"), row=1, col=2)
         sel_i = envs_all.index(environment)
         fig_deg.add_annotation(x=envs_all[sel_i], y=errors_all[sel_i]+8, text="▼ Selected",
                                showarrow=False, font=dict(color=GOLD, size=11), row=1, col=1)
@@ -348,7 +357,7 @@ with tab2:
             **dark_layout(height=500, title_text="PINN surface vs NN plane"),
             scene=dict(**scene_dark(), xaxis_title="log₁₀(Samples)", yaxis_title="λ",
                        zaxis_title="Error (m)", camera=dict(eye=dict(x=1.8, y=-1.2, z=0.9))))
-        st.plotly_chart(fig_3d, use_container_width=True)
+        render_3d_auto(fig_3d, height=500, speed=0.3)
 
     with col_lam:
         lambdas = np.linspace(0, 2.0, 150)
@@ -359,7 +368,8 @@ with tab2:
 
         fig_lam = go.Figure()
         fig_lam.add_trace(go.Scatter(x=lambdas, y=lam_err, mode="lines", name="PINN Error",
-            line=dict(color=PINN_BLUE, width=3), fill="tozeroy", fillcolor="rgba(41,182,246,0.08)"))
+            line=dict(color=PINN_BLUE, width=3), fill="tozeroy", fillcolor="rgba(41,182,246,0.08)",
+            hovertemplate="λ=%{x:.2f}<br>Error=%{y:.1f}m<extra>PINN</extra>"))
         fig_lam.add_vrect(x0=0.3, x1=0.7, fillcolor=GREEN, opacity=0.1,
                           annotation_text="Optimal Zone", annotation_font_color=GREEN, annotation_position="top")
         ci = np.argmin(np.abs(lambdas - lambda_weight))
@@ -453,7 +463,8 @@ with tab3:
             x=["10K Clean (1.5 b/s)", f"1M Noisy ({noise_level:.2f} b/s)"],
             y=[clean_bits, noisy_bits], marker_color=[GREEN, CORAL],
             text=[f"{clean_bits:,.0f}", f"{noisy_bits:,.0f}"], textposition="outside",
-            textfont=dict(color=TEXT_COLOR, size=13)))
+            textfont=dict(color=TEXT_COLOR, size=13),
+            hovertemplate="<b>%{x}</b><br>Total bits: %{y:,.0f}<extra></extra>"))
         v = "Noisy wins on volume" if noisy_bits > clean_bits else "Clean wins — quality matters"
         fig_info.update_layout(**dark_layout(height=320, title_text="Total Information Content",
             yaxis_title="Total Bits",
@@ -554,7 +565,7 @@ with tab4:
         **dark_layout(height=450, title_text="Error grows multiplicatively"),
         scene=dict(**scene_dark(), xaxis_title="Covariate Shift", yaxis_title="Clock Drift (ns)",
                    zaxis_title="Error (m)", camera=dict(eye=dict(x=1.5, y=-1.5, z=1.0))))
-    st.plotly_chart(fig_3de, use_container_width=True)
+    render_3d_auto(fig_3de, height=470, speed=0.3)
 
     st.markdown("""<div class="success-card"><h4 style="color:#009688;margin-top:0;">🛡 Defense Protocol</h4>
     <p style="color:#E0E7EE;"><b>Deploy MMD Monitors</b> on input pipelines. Threshold exceeded → <b>retrain</b> or <b>fallback to Kalman</b>.</p>
@@ -585,12 +596,15 @@ with tab5:
         nn_f = 6*sizes; pinn_f = nn_f*1.3; mem = 12*sizes*1e6/1e9
         fig_c = make_subplots(specs=[[{"secondary_y": True}]])
         fig_c.add_trace(go.Bar(x=[f"{s}M" for s in sizes[::4]], y=nn_f[::4],
-            name="NN (6N)", marker_color=NN_RED, opacity=0.8), secondary_y=False)
+            name="NN (6N)", marker_color=NN_RED, opacity=0.8,
+            hovertemplate="<b>%{x}</b><br>NN FLOPs: %{y:.0f} G<extra>NN</extra>"), secondary_y=False)
         fig_c.add_trace(go.Bar(x=[f"{s}M" for s in sizes[::4]], y=pinn_f[::4],
-            name="PINN (7.8N)", marker_color=PINN_BLUE, opacity=0.8), secondary_y=False)
+            name="PINN (7.8N)", marker_color=PINN_BLUE, opacity=0.8,
+            hovertemplate="<b>%{x}</b><br>PINN FLOPs: %{y:.0f} G<extra>PINN</extra>"), secondary_y=False)
         fig_c.add_trace(go.Scatter(x=[f"{s}M" for s in sizes[::4]], y=mem[::4],
             name="Memory (GB)", mode="lines+markers", line=dict(color=AMBER, width=2.5),
-            marker=dict(size=7, color=AMBER)), secondary_y=True)
+            marker=dict(size=7, color=AMBER),
+            hovertemplate="<b>%{x}</b><br>Memory: %{y:.2f} GB<extra>Memory</extra>"), secondary_y=True)
         si = np.argmin(np.abs(sizes-model_size))
         fig_c.add_trace(go.Scatter(x=[f"{model_size}M"], y=[nn_f[si]], mode="markers",
             marker=dict(size=16, color=GOLD, symbol="star"), name=f"Selected: {model_size}M"), secondary_y=False)
@@ -624,7 +638,7 @@ with tab5:
         fig_rf.update_layout(**dark_layout(height=430, title_text="3D Roofline"),
             scene=dict(**scene_dark(), xaxis_title="Model Size (M)", yaxis_title="log₁₀(Arith. Int.)",
                        zaxis_title="log₁₀(GFLOPS)", camera=dict(eye=dict(x=1.5, y=-1.3, z=0.9))))
-        st.plotly_chart(fig_rf, use_container_width=True)
+        render_3d_auto(fig_rf, height=450, speed=0.25)
 
     st.markdown("""<div class="info-card"><b>Key insight:</b> Training = CAPEX. Inference = OPEX.
     <span style="color:#FF6B6B;"><b>Inference cost is the binding constraint</b></span> for fleet-scale GNSS.</div>""", unsafe_allow_html=True)
@@ -633,6 +647,40 @@ with tab5:
     m1.metric("NN FLOPs/token", f"{6*model_size*1e6/1e9:.1f} GFLOPs")
     m2.metric("PINN FLOPs/token", f"{6*model_size*1e6/1e9*1.3:.1f} GFLOPs")
     m3.metric("Training memory", f"{12*model_size*1e6/1e9:.2f} GB")
+
+    # Sankey — PINN Data & Compute Pipeline
+    st.markdown("#### PINN Data & Compute Pipeline Flow")
+    nn_flops = 6 * model_size
+    pinn_flops = nn_flops * 1.3
+    phys_flops = pinn_flops - nn_flops
+    inf_flops = 2 * model_size
+    quant_save = inf_flops * (1 - 1/int(4/bpp)) if bpp < 4 else 0
+
+    fig_sk = go.Figure(go.Sankey(
+        arrangement="snap",
+        node=dict(
+            pad=20, thickness=25, line=dict(color=GRID_COLOR, width=1),
+            label=["Raw GNSS\nObservations", "Data Audit\n& Cleaning", "Training\nDataset",
+                   "Data Loss\nL_data", "Physics Loss\nλ·L_physics", "PINN\nTraining",
+                   "Trained\nModel", "Quantization\n(INT8/INT4)", "Edge\nInference",
+                   "Fleet\nCorrections"],
+            color=[CYAN, GREEN, PINN_BLUE, NN_RED, AMBER, PINN_BLUE,
+                   GREEN, TEAL, CORAL, GOLD],
+            hovertemplate="<b>%{label}</b><extra></extra>",
+        ),
+        link=dict(
+            source=[0, 1, 2, 2, 3, 4, 5, 6, 7, 8],
+            target=[1, 2, 3, 4, 5, 5, 6, 7, 8, 9],
+            value=[100, 80, 60, 40, 60, 40, 100, 100, 90, 90],
+            color=["rgba(0,188,212,0.3)", "rgba(102,187,106,0.3)", "rgba(239,83,59,0.3)",
+                   "rgba(255,183,77,0.3)", "rgba(239,83,59,0.3)", "rgba(255,183,77,0.3)",
+                   "rgba(41,182,246,0.3)", "rgba(0,150,136,0.3)", "rgba(255,107,107,0.3)",
+                   "rgba(255,213,79,0.3)"],
+            hovertemplate="<b>%{source.label} → %{target.label}</b><br>Flow: %{value}<extra></extra>",
+        ),
+    ))
+    fig_sk.update_layout(**dark_layout(height=380, title_text="End-to-End PINN Pipeline: Data → Training → Edge"))
+    st.plotly_chart(fig_sk, use_container_width=True)
 
 
 # ══════════════════════════════════════════════
@@ -661,9 +709,11 @@ with tab6:
         na = [100.0, 99.8, 99.2, 96.5]; pa = [100.0, 99.9, 99.5, 97.0]
         fig_q = go.Figure()
         fig_q.add_trace(go.Bar(x=ql, y=na, name="NN", marker_color=NN_RED, opacity=0.85,
-            text=[f"{a:.1f}%" for a in na], textposition="outside", textfont=dict(color=TEXT_COLOR, size=10)))
+            text=[f"{a:.1f}%" for a in na], textposition="outside", textfont=dict(color=TEXT_COLOR, size=10),
+            hovertemplate="<b>%{x}</b><br>NN Accuracy: %{y:.1f}%<br>Compression: %{text}<extra>NN</extra>"))
         fig_q.add_trace(go.Bar(x=ql, y=pa, name="PINN", marker_color=PINN_BLUE, opacity=0.85,
-            text=[f"{a:.1f}%" for a in pa], textposition="outside", textfont=dict(color=TEXT_COLOR, size=10)))
+            text=[f"{a:.1f}%" for a in pa], textposition="outside", textfont=dict(color=TEXT_COLOR, size=10),
+            hovertemplate="<b>%{x}</b><br>PINN Accuracy: %{y:.1f}%<extra>PINN</extra>"))
         fig_q.add_hline(y=99, line_dash="dash", line_color=GREEN, annotation_text="99%", annotation_font_color=GREEN)
         for i, (q, m) in enumerate(zip(ql, mr)):
             fig_q.add_annotation(x=q, y=95.3, text=f"{m}×", showarrow=False, font=dict(color=AMBER, size=12))
@@ -678,7 +728,7 @@ with tab6:
 
     with col_lat:
         # 3D Latency surface
-        st.markdown("#### 3D Latency Surface (drag to rotate)")
+        st.markdown("#### 3D Latency Surface (auto-rotating)")
         s3 = np.arange(5, 205, 10)
         b3 = np.arange(1, 65, 4)
         SZ, BA = np.meshgrid(s3, b3)
@@ -707,7 +757,7 @@ with tab6:
         fig_l3.update_layout(**dark_layout(height=430, title_text=f"Latency ({sq})"),
             scene=dict(**scene_dark(), xaxis_title="Model (M)", yaxis_title="Batch",
                        zaxis_title="Latency (ms)", camera=dict(eye=dict(x=1.6, y=-1.4, z=0.9))))
-        st.plotly_chart(fig_l3, use_container_width=True)
+        render_3d_auto(fig_l3, height=450, speed=0.3)
 
     meets = clv < 100
     m1, m2, m3, m4 = st.columns(4)
@@ -755,11 +805,14 @@ with tab7:
 
         fig_rad = go.Figure()
         fig_rad.add_trace(go.Scatterpolar(r=nn_s+[nn_s[0]], theta=cats+[cats[0]], name="NN",
-            line=dict(color=NN_RED, width=2.5), fill="toself", fillcolor="rgba(239,83,59,0.15)"))
+            line=dict(color=NN_RED, width=2.5), fill="toself", fillcolor="rgba(239,83,59,0.15)",
+            hovertemplate="<b>%{theta}</b><br>NN Score: %{r}/5<extra></extra>"))
         fig_rad.add_trace(go.Scatterpolar(r=pi_s+[pi_s[0]], theta=cats+[cats[0]], name="PINN",
-            line=dict(color=PINN_BLUE, width=2.5), fill="toself", fillcolor="rgba(41,182,246,0.15)"))
+            line=dict(color=PINN_BLUE, width=2.5), fill="toself", fillcolor="rgba(41,182,246,0.15)",
+            hovertemplate="<b>%{theta}</b><br>PINN Score: %{r}/5<extra></extra>"))
         fig_rad.add_trace(go.Scatterpolar(r=ka_s+[ka_s[0]], theta=cats+[cats[0]], name="Kalman",
-            line=dict(color=KALMAN_AMBER, width=2), fill="toself", fillcolor="rgba(255,183,77,0.1)"))
+            line=dict(color=KALMAN_AMBER, width=2), fill="toself", fillcolor="rgba(255,183,77,0.1)",
+            hovertemplate="<b>%{theta}</b><br>Kalman Score: %{r}/5<extra></extra>"))
         fig_rad.update_layout(
             polar=dict(bgcolor=CARD_BG,
                 radialaxis=dict(visible=True, range=[0,5], gridcolor=GRID_COLOR, tickfont=dict(color=MUTED, size=9)),
@@ -781,15 +834,18 @@ with tab7:
         fig_3m.update_layout(**dark_layout(height=380, title_text="Efficiency × Safety × Generalization"),
             scene=dict(**scene_dark(), xaxis_title="Data Eff.", yaxis_title="Safety",
                        zaxis_title="Generalization", camera=dict(eye=dict(x=1.5, y=-1.5, z=1.0))))
-        st.plotly_chart(fig_3m, use_container_width=True)
+        render_3d_auto(fig_3m, height=400, speed=0.4)
 
     # Environment bars
     envs = ["Open Sky","Urban Canyon","Tunnel Exit","Deep Urban"]
     ne = [4.5,45,85,95]; pe = [2.5,8,25,35]; ke = [3.5,35,70,90]
     fig_e = go.Figure()
-    fig_e.add_trace(go.Bar(x=envs, y=ke, name="Kalman+INS", marker_color=KALMAN_AMBER, opacity=0.85))
-    fig_e.add_trace(go.Bar(x=envs, y=ne, name="Traditional NN", marker_color=NN_RED, opacity=0.85))
-    fig_e.add_trace(go.Bar(x=envs, y=pe, name="PINN (Hybrid)", marker_color=PINN_BLUE, opacity=0.85))
+    fig_e.add_trace(go.Bar(x=envs, y=ke, name="Kalman+INS", marker_color=KALMAN_AMBER, opacity=0.85,
+        hovertemplate="<b>%{x}</b><br>Kalman Error: %{y}m<extra>Kalman+INS</extra>"))
+    fig_e.add_trace(go.Bar(x=envs, y=ne, name="Traditional NN", marker_color=NN_RED, opacity=0.85,
+        hovertemplate="<b>%{x}</b><br>NN Error: %{y}m<extra>Traditional NN</extra>"))
+    fig_e.add_trace(go.Bar(x=envs, y=pe, name="PINN (Hybrid)", marker_color=PINN_BLUE, opacity=0.85,
+        hovertemplate="<b>%{x}</b><br>PINN Error: %{y}m<extra>PINN</extra>"))
     fig_e.add_hline(y=5, line_dash="dash", line_color=GREEN, annotation_text="5m target", annotation_font_color=GREEN)
     if environment in envs:
         ei = envs.index(environment)
