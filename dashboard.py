@@ -654,7 +654,9 @@ with tab5:
     pinn_flops = nn_flops * 1.3
     phys_flops = pinn_flops - nn_flops
     inf_flops = 2 * model_size
-    quant_save = inf_flops * (1 - 1/int(4/bpp)) if bpp < 4 else 0
+    _sq = precision.split(" ")[0]
+    _bpp = {"FP32":4.0, "FP16":2.0, "INT8":1.0, "INT4":0.5}.get(_sq, 1.0)
+    quant_save = inf_flops * (1 - 1/int(4/_bpp)) if _bpp < 4 else 0
 
     fig_sk = go.Figure(go.Sankey(
         arrangement="snap",
